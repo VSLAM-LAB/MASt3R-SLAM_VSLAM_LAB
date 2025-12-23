@@ -6,6 +6,9 @@ import numpy as np
 import torch
 import pyrealsense2 as rs
 import yaml
+import logging
+import pandas as pd
+import os
 
 from mast3r_slam.mast3r_utils import resize_img
 from mast3r_slam.config import config
@@ -62,6 +65,69 @@ class MonocularDataset(torch.utils.data.Dataset):
 
     def has_calib(self):
         return self.camera_intrinsics is not None
+
+class VSLAMLABDataset(MonocularDataset):
+    def __init__(self, sequence_path, rgb_csv, calibration_yaml, cam_name):
+        super().__init__()
+        self.dataset_path = pathlib.Path(sequence_path)
+
+        # Load rgb images
+        df = pd.read_csv(rgb_csv)       
+        self.rgb_files = df[f'path_{cam_name}'].to_list()
+        self.timestamps = df[f'ts_{cam_name} (s)'].to_list()
+
+        for i, rgb_file in enumerate(self.rgb_files):
+            self.rgb_files[i] = os.path.join(sequence_path, rgb_file)
+
+        # Load calibration
+        with open(calibration_yaml, 'r') as file:
+            data = yaml.safe_load(file)
+        cameras = data.get('cameras', [])
+        for cam_ in cameras:
+            if cam_['cam_name'] == cam_name:
+                cam = cam_;
+                break;
+
+        camera_model = cam['cam_model']
+
+        self.use_calibration = True
+        if not config["use_calib"] or (camera_model == "unknown"):
+            if config["use_calib"] and camera_model == "unknown":
+                logging.error("Camera model is unknown, calibration will not be used.")
+            config["use_calib"] = False
+            self.use_calibration = False
+        else:    
+            print(f"\nCamera Name: {cam['cam_name']}")
+            print(f"Camera Type: {cam['cam_type']}")
+            print(f"Camera Model: {cam['cam_model']}")
+            print(f"Focal Length: {cam['focal_length']}")
+            print(f"Principal Point: {cam['principal_point']}")
+            has_dist = ('distortion_type' in cam) and ('distortion_coefficients' in cam)
+            if has_dist:
+                print(f"Distortion Type Dimension: {cam['distortion_type']}")
+                print(f"Distortion Coefficients: {cam['distortion_coefficients']}")
+            print(f"Image Dimension: {cam['image_dimension']}")
+            print(f"Fps: {cam['fps']}")
+
+            fx, fy = cam['focal_length']
+            cx, cy = cam['principal_point']
+            if has_dist:
+                dist = cam['distortion_coefficients']
+                if len(dist) < 5:
+                    dist = np.pad(dist, (0, 5 - len(dist)), mode='constant')
+                k1, k2, p1, p2, k3 = dist
+
+            H, W = cam['image_dimension']
+            
+            if has_dist:
+                calibration = np.array([fx, fy, cx, cy, k1, k2, p1, p2, k3])
+            else:
+                calibration = np.array([fx, fy, cx, cy])
+
+            _, (H, W) = self.get_img_shape()
+            self.camera_intrinsics = Intrinsics.from_calib(self.img_size, W, H, calibration)
+ 
+        print(f"Use calibration: {self.use_calibration}")
 
 
 class TUMDataset(MonocularDataset):
@@ -317,22 +383,24 @@ class Intrinsics:
         return Intrinsics(img_size, W, H, K, K_opt, distortion, mapx, mapy)
 
 
-def load_dataset(dataset_path):
-    split_dataset_type = dataset_path.split("/")
-    if "tum" in split_dataset_type:
-        return TUMDataset(dataset_path)
-    if "euroc" in split_dataset_type:
-        return EurocDataset(dataset_path)
-    if "eth3d" in split_dataset_type:
-        return ETH3DDataset(dataset_path)
-    if "7-scenes" in split_dataset_type:
-        return SevenScenesDataset(dataset_path)
-    if "realsense" in split_dataset_type:
-        return RealsenseDataset()
-    if "webcam" in split_dataset_type:
-        return Webcam()
+def load_dataset(sequence_path, rgb_csv, calibration_yaml, cam_name):
+    return VSLAMLABDataset(sequence_path, rgb_csv, calibration_yaml, cam_name)
 
-    ext = split_dataset_type[-1].split(".")[-1]
-    if ext in ["mp4", "avi", "MOV", "mov"]:
-        return MP4Dataset(dataset_path)
-    return RGBFiles(dataset_path)
+    # split_dataset_type = dataset_path.split("/")
+    # if "tum" in split_dataset_type:
+    #     return TUMDataset(dataset_path)
+    # if "euroc" in split_dataset_type:
+    #     return EurocDataset(dataset_path)
+    # if "eth3d" in split_dataset_type:
+    #     return ETH3DDataset(dataset_path)
+    # if "7-scenes" in split_dataset_type:
+    #     return SevenScenesDataset(dataset_path)
+    # if "realsense" in split_dataset_type:
+    #     return RealsenseDataset()
+    # if "webcam" in split_dataset_type:
+    #     return Webcam()
+
+    # ext = split_dataset_type[-1].split(".")[-1]
+    # if ext in ["mp4", "avi", "MOV", "mov"]:
+    #     return MP4Dataset(dataset_path)
+    # return RGBFiles(dataset_path)

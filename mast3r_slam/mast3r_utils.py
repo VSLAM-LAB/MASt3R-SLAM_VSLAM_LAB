@@ -2,6 +2,7 @@ import PIL
 import numpy as np
 import torch
 import einops
+import os
 
 import mast3r.utils.path_to_dust3r  # noqa
 from dust3r.utils.image import ImgNorm
@@ -11,9 +12,9 @@ from mast3r_slam.config import config
 import mast3r_slam.matching as matching
 
 
-def load_mast3r(path=None, device="cuda"):
+def load_mast3r(path=None, device="cuda", checkpoints_dir="checkpoints"):
     weights_path = (
-        "checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth"
+        os.path.join(checkpoints_dir, "MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth")
         if path is None
         else path
     )
@@ -21,9 +22,9 @@ def load_mast3r(path=None, device="cuda"):
     return model
 
 
-def load_retriever(mast3r_model, retriever_path=None, device="cuda"):
+def load_retriever(mast3r_model, retriever_path=None, device="cuda", checkpoints_dir="checkpoints"):
     retriever_path = (
-        "checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric_retrieval_trainingfree.pth"
+        os.path.join(checkpoints_dir, "MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric_retrieval_trainingfree.pth")
         if retriever_path is None
         else retriever_path
     )
