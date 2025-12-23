@@ -51,7 +51,7 @@ class Window(WindowEvents):
             self.set_font_scale(2.0)
             self.scale = 2
         self.clear = hex2rgba("#1E2326", alpha=1)
-        resources.register_dir((Path(__file__).parent.parent / "resources").resolve())
+        resources.register_dir((Path(__file__).parent / "resources").resolve())
 
         self.line_prog = self.load_program("programs/lines.glsl")
         self.surfelmap_prog = self.load_program("programs/surfelmap.glsl")

@@ -10,7 +10,7 @@ from imgui.integrations import compute_fb_scale
 class WindowEvents(mglw.WindowConfig):
     gl_version = (3, 3)
     title = None
-    resource_dir = (Path(__file__).parent.parent / "resources").resolve()
+    resource_dir = (Path(__file__).parent / "resources").resolve()
     aspect_ratio = None
     samples = 4
     log_level = logging.INFO
