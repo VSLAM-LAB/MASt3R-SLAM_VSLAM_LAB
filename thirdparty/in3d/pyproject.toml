@@ -12,6 +12,11 @@ dynamic = ["dependencies"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["in3d"]
-exclude = ["thirdparty", "resources"]
-namespaces = false
+include = ["in3d", "in3d.*"]
+#namespaces = false
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.data-files]
+"resources" = ["resources/*"]
