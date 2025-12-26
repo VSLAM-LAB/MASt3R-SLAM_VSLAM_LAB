@@ -74,7 +74,7 @@ class VSLAMLABDataset(MonocularDataset):
         # Load rgb images
         df = pd.read_csv(rgb_csv)       
         self.rgb_files = df[f'path_{cam_name}'].to_list()
-        self.timestamps = df[f'ts_{cam_name} (s)'].to_list()
+        self.timestamps = (df[f'ts_{cam_name} (ns)'] / 1e9).to_list()
 
         for i, rgb_file in enumerate(self.rgb_files):
             self.rgb_files[i] = os.path.join(sequence_path, rgb_file)

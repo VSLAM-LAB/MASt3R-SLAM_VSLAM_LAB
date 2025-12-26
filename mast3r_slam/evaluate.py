@@ -27,23 +27,32 @@ def save_traj(
     frames: SharedKeyframes,
     intrinsics: Optional[Intrinsics] = None,
 ):
-    # log
+    # Setup directory and path
     logdir = pathlib.Path(logdir)
     logdir.mkdir(exist_ok=True, parents=True)
     logfile = logdir / logfile
-    with open(logfile, "w") as f:
-        # for keyframe_id in frames.keyframe_ids:
+    import csv
+    with open(logfile, "w", newline="") as f:
+        writer = csv.writer(f)
+        
+        # Write the header
+        writer.writerow(["ts (ns)", "tx (m)", "ty (m)", "tz (m)", "qx", "qy", "qz", "qw"])
+        
         for i in range(len(frames)):
             keyframe = frames[i]
-            t = timestamps[keyframe.frame_id]
+            t = int(timestamps[keyframe.frame_id] * 1e9)
             if intrinsics is None:
                 T_WC = as_SE3(keyframe.T_WC)
             else:
                 T_WC = intrinsics.refine_pose_with_calibration(keyframe)
-            x, y, z, qx, qy, qz, qw = T_WC.data.numpy().reshape(-1)
-            f.write(f"{t} {x} {y} {z} {qx} {qy} {qz} {qw}\n")
-
-
+            
+            # Extract and flatten pose data
+            # .tolist() is used here as writerow expects a sequence
+            pose_data = T_WC.data.detach().cpu().numpy().flatten().tolist()
+            
+            # Combine timestamp with pose components
+            writer.writerow([t] + pose_data)
+  
 def save_reconstruction(savedir, filename, keyframes, c_conf_threshold):
     savedir = pathlib.Path(savedir)
     savedir.mkdir(exist_ok=True, parents=True)

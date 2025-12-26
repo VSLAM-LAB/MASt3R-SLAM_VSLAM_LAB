@@ -298,7 +298,7 @@ def main():
         i += 1
 
     eval.save_traj(args.exp_folder, 
-                  args.exp_it.zfill(5) + '_KeyFrameTrajectory' + '.txt', dataset.timestamps, keyframes)
+                  args.exp_it.zfill(5) + '_KeyFrameTrajectory' + '.csv', dataset.timestamps, keyframes)
     
     print("done")
     backend.join()
