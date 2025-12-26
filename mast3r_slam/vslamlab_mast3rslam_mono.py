@@ -172,12 +172,13 @@ def main():
     config["use_calib"] = bool(int(args.use_calib)) #not args.no_calib
 
     print(config)
+    cam_name = config["cam_mono"]
 
     manager = mp.Manager()
     main2viz = new_queue(manager, no_viz)
     viz2main = new_queue(manager, no_viz)
 
-    dataset = load_dataset(args.sequence_path, args.rgb_csv, args.calibration_yaml)
+    dataset = load_dataset(args.sequence_path, args.rgb_csv, args.calibration_yaml, cam_name)
     dataset.subsample(config["dataset"]["subsample"])
     num_frames = len(dataset.rgb_files)
 
@@ -297,7 +298,7 @@ def main():
         i += 1
 
     eval.save_traj(args.exp_folder, 
-                  args.exp_it.zfill(5) + '_KeyFrameTrajectory' + '.txt', dataset.timestamps, keyframes)
+                  args.exp_it.zfill(5) + '_KeyFrameTrajectory' + '.csv', dataset.timestamps, keyframes)
     
     print("done")
     backend.join()
