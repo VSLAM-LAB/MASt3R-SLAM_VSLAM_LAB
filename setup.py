@@ -11,6 +11,8 @@ pyimgui_path = Path(__file__).parent / "thirdparty"/ "in3d" / "thirdparty" / "py
 ROOT = osp.dirname(osp.abspath(__file__))
 torch_include_dirs = include_paths()
 torch_library_dirs = library_paths()
+conda_prefix = os.environ.get("PREFIX", os.environ.get("CONDA_PREFIX", ""))
+eigen_path = osp.join(conda_prefix, 'include', 'eigen3')
 
 setup(
     name='vslamlab-mast3rslam-mono',
@@ -41,8 +43,7 @@ setup(
             name='mast3r_slam_backends',
             include_dirs=torch_include_dirs + [
                 osp.join(ROOT, 'mast3r_slam/backend/include'),
-                osp.join(os.environ["CONDA_PREFIX"], 'include/eigen3'),
-                #osp.join(os.environ["PREFIX"], 'include/eigen3')
+                eigen_path
                 ],
             library_dirs=torch_library_dirs,
             sources=[
